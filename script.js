@@ -1,6 +1,7 @@
-function playerFactory(name, mark) {
+function playerFactory(name, mark, isAI = false) {
 	return {getName: function() {return name;},
-			getMark: function() {return mark;}}
+			getMark: function() {return mark;},
+			getIsAI: function() {return isAI;}}
 }
 
 const gameBoard = function(){
@@ -78,9 +79,37 @@ const game = function(){
 			isGameOver = true;
 			currentPlayer = null;
 		}
-		else {
-			setNextPlayer();
+		displayController.updateDisplay();
+	}
+	
+	function doAIMove(mark) {
+		let availableMoves = [];
+		for (let i = 0; i < gameBoard.getBoardLength(); ++i) {
+			if (gameBoard.getBoardAt(i) === null) {
+				availableMoves.push(i);
+			}
 		}
+		
+		gameBoard.setBoardAt(availableMoves[Math.floor(Math.random() * availableMoves.length)], mark);
+	}
+	
+	function performGameLoop(alreadyPerformedMove = false) {
+		while (true) {
+			if (!alreadyPerformedMove) {
+				if (players[currentPlayer].getIsAI()) {
+					doAIMove(players[currentPlayer].getMark());
+				}
+				else {
+					break;
+				}
+			}
+			analyzeGame();
+			if (isGameOver) {
+				break;
+			}
+			setNextPlayer();
+			alreadyPerformedMove = false;
+		}			
 		displayController.updateDisplay();
 	}
 	
@@ -89,7 +118,7 @@ const game = function(){
 			if (!isGameOver) {
 				if (gameBoard.getBoardAt(index) === null) {
 					gameBoard.setBoardAt(index, players[currentPlayer].getMark());
-					analyzeGame();
+					performGameLoop(true);
 				}
 			}
 		},
@@ -99,12 +128,39 @@ const game = function(){
 		getCurrentPlayerName: function() {
 			if (currentPlayer === null) { return null; }
 			return players[currentPlayer].getName();
-		}
+		},
+		
+		startGamePvP: function() {
+			gameBoard.clearBoard();
+			isGameOver = false;
+			players = [playerFactory(1, "x"), playerFactory(2, "O")];
+			currentPlayer = Math.floor(Math.random() * players.length);
+			performGameLoop();
+		},
+		
+		startGamePvC: function() {
+			gameBoard.clearBoard();
+			isGameOver = false;
+			players = [playerFactory(1, "x"), playerFactory(2, "O", true)];
+			currentPlayer = Math.floor(Math.random() * players.length);
+			performGameLoop();
+		},
+		
+		startGameCvC: function() {
+			gameBoard.clearBoard();
+			isGameOver = false;
+			players = [playerFactory(1, "x", true), playerFactory(2, "O", true)];
+			currentPlayer = Math.floor(Math.random() * players.length);
+			performGameLoop();
+		},
 	}
 }()
 
 const displayController = function(){
 	const gameStatus = document.querySelector("#game-status");
+	document.querySelector("#button-PvP").addEventListener('click', game.startGamePvP);
+	document.querySelector("#button-PvC").addEventListener('click', game.startGamePvC);
+	document.querySelector("#button-CvC").addEventListener('click', game.startGameCvC);
 	const allButtons = document.querySelectorAll(".ttt-board-b");
 	for (let i = 0; i < allButtons.length; ++i) {
 		allButtons[i].addEventListener('click', game.pressedAt.bind(this, i));
