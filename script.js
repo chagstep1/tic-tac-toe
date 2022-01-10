@@ -9,10 +9,10 @@ const gameBoard = function(){
 	return {
 		clearBoard: function() { 
 			for (let i = 0; i < boardArray.length; ++i) {
-				boardArray[i] = '';
+				boardArray[i] = null;
 			}
 		},
-		setBoardAt: function(mark, index) {
+		setBoardAt: function(index, mark) {
 			boardArray[index] = mark;
 		},
 		getBoardAt: function(index) {
@@ -21,6 +21,7 @@ const gameBoard = function(){
 		getBoardLength: function() {
 			return boardArray.length;
 		},
+		debug: function() {return boardArray;}
 	}
 }()
 
@@ -43,21 +44,21 @@ const game = function(){
 	
 	function setNextPlayer() {
 		++currentPlayer;
-		if (currentPlayer >= player.lenght) {
+		if (currentPlayer >= players.length) {
 			currentPlayer = 0;
 		}
 	}
 	
 	function isWonBy(player) {
 		for (let i = 0; i < victoryConds.length; ++i) {
+			let won = true;
 			for (let j = 0; j < victoryConds[i].length; ++j) {
-				let won = true;
-				if (victoryConds[i][j] !== player.getMark()) {
+				if (gameBoard.getBoardAt(victoryConds[i][j]) !== player.getMark()) {
 					won = false;
 					break;
 				}
-				if (won) {return true;}
 			}
+			if (won) {return true;}
 		}
 		return false;
 	}
@@ -75,17 +76,18 @@ const game = function(){
 		}
 		else if (isTie()) {
 			isGameOver = true;
-			currentPlayer = false;
+			currentPlayer = null;
 		}
 		else {
 			setNextPlayer();
 		}
+		displayController.updateDisplay();
 	}
 	
 	return {
 		pressedAt: function(index) {
 			if (!isGameOver) {
-				if (gameBoard.getBoardAt(index) !== null) {
+				if (gameBoard.getBoardAt(index) === null) {
 					gameBoard.setBoardAt(index, players[currentPlayer].getMark());
 					analyzeGame();
 				}
@@ -96,7 +98,7 @@ const game = function(){
 		},
 		getCurrentPlayerName: function() {
 			if (currentPlayer === null) { return null; }
-			return players[currentPlayer].name;
+			return players[currentPlayer].getName();
 		}
 	}
 }()
@@ -130,3 +132,4 @@ const displayController = function(){
 }()
 
 gameBoard.clearBoard();
+displayController.updateDisplay();
